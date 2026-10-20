@@ -1,0 +1,6 @@
+{
+  "name": "Raheem Ludo",
+  "description": "Classic mobile-friendly Ludo board game for 2 to 4 players with tactile dice, authentic rules, local save persistence, and Android-ready architecture.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

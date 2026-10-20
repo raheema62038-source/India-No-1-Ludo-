@@ -1,0 +1,260 @@
+{
+  "entities": {
+    "PublicProfile": {
+      "title": "PublicProfile",
+      "description": "Public non-PII profile and presence status for a registered Raheem Ludo player.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the player",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "playerCode": {
+          "type": "string",
+          "description": "Short shareable Raheem Ludo Friend ID (e.g. RL-4829)",
+          "minLength": 3,
+          "maxLength": 16,
+          "pattern": "^[A-Z0-9\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Public display name in Raheem Ludo",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "avatarColor": {
+          "type": "string",
+          "description": "Preferred Ludo token color",
+          "enum": ["RED", "GREEN", "YELLOW", "BLUE"]
+        },
+        "presenceStatus": {
+          "type": "string",
+          "description": "Current online status",
+          "enum": ["ONLINE", "IN_MATCH", "OFFLINE"]
+        },
+        "friendUids": {
+          "type": "string",
+          "description": "Comma-separated list of friend UIDs (bounded <= 500 chars)",
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp"
+        }
+      },
+      "required": [
+        "uid",
+        "playerCode",
+        "displayName",
+        "avatarColor",
+        "presenceStatus",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "UserSave": {
+      "title": "UserSave",
+      "description": "Owner-isolated cloud account progress, virtual coin/gem balance, cosmetics, and device restore data.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the account owner",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "playerCode": {
+          "type": "string",
+          "description": "Persistent Raheem Ludo Player ID (e.g. RL-4829)",
+          "minLength": 3,
+          "maxLength": 16,
+          "pattern": "^[A-Z0-9\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Saved player username",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "avatarColor": {
+          "type": "string",
+          "description": "Saved avatar color",
+          "enum": ["RED", "GREEN", "YELLOW", "BLUE"]
+        },
+        "photoUrl": {
+          "type": "string",
+          "description": "Optional OAuth avatar photo URL",
+          "maxLength": 500
+        },
+        "authProvider": {
+          "type": "string",
+          "description": "Linked OAuth provider",
+          "enum": ["GOOGLE", "FACEBOOK"]
+        },
+        "coins": {
+          "type": "number",
+          "description": "Virtual coin balance earned in-game"
+        },
+        "gems": {
+          "type": "number",
+          "description": "Virtual gem balance earned in-game"
+        },
+        "dailyStreak": {
+          "type": "number",
+          "description": "Consecutive daily login streak (0..365)"
+        },
+        "lastDailyClaimDate": {
+          "type": "string",
+          "description": "ISO date string (YYYY-MM-DD) of last daily claim or empty",
+          "maxLength": 16
+        },
+        "equippedDiceStyle": {
+          "type": "string",
+          "description": "Equipped dice cosmetic key",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "equippedTokenStyle": {
+          "type": "string",
+          "description": "Equipped token cosmetic key",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "unlockedItemsCsv": {
+          "type": "string",
+          "description": "Comma-separated unlocked cosmetic IDs",
+          "maxLength": 500
+        },
+        "savedMatchTurn": {
+          "type": "number",
+          "description": "Turn count of active saved match (0 if none)"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp"
+        }
+      },
+      "required": [
+        "uid",
+        "playerCode",
+        "displayName",
+        "avatarColor",
+        "photoUrl",
+        "authProvider",
+        "coins",
+        "gems",
+        "dailyStreak",
+        "lastDailyClaimDate",
+        "equippedDiceStyle",
+        "equippedTokenStyle",
+        "unlockedItemsCsv",
+        "savedMatchTurn",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Room": {
+      "title": "Room",
+      "description": "Real-time Ludo matchmaking or private friend room.",
+      "type": "object",
+      "properties": {
+        "roomCode": {
+          "type": "string",
+          "description": "Room code identifier",
+          "minLength": 3,
+          "maxLength": 16,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "hostUid": {
+          "type": "string",
+          "description": "UID of the player who created the room",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "hostName": {
+          "type": "string",
+          "description": "Display name of the host",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "mode": {
+          "type": "string",
+          "description": "Game mode for the room",
+          "enum": ["ONLINE_2P", "ONLINE_4P", "TEAM_UP_2V2", "FRIENDS_PRIVATE"]
+        },
+        "status": {
+          "type": "string",
+          "description": "Lifecycle status of the room",
+          "enum": ["WAITING", "PLAYING", "FINISHED"]
+        },
+        "maxPlayers": {
+          "type": "number",
+          "description": "Maximum players allowed (2 or 4)"
+        },
+        "currentTurnColor": {
+          "type": "string",
+          "description": "Active turn color",
+          "enum": ["RED", "GREEN", "YELLOW", "BLUE"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp"
+        }
+      },
+      "required": [
+        "roomCode",
+        "hostUid",
+        "hostName",
+        "mode",
+        "status",
+        "maxPlayers",
+        "currentTurnColor",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/public_profiles/{userId}": {
+      "schema": {
+        "$ref": "#/entities/PublicProfile"
+      },
+      "description": "Public non-PII profiles and online presence status of registered Raheem Ludo players."
+    },
+    "/user_saves/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserSave"
+      },
+      "description": "Owner-isolated cloud account progress, virtual coin/gem balance, and device restore data."
+    },
+    "/rooms/{roomId}": {
+      "schema": {
+        "$ref": "#/entities/Room"
+      },
+      "description": "Real-time multiplayer matchmaking and friend rooms."
+    }
+  }
+}

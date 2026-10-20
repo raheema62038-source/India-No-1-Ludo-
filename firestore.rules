@@ -1,0 +1,267 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Reusable Hardened Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isTrustedAuthUser() {
+      return isSignedIn() && (
+        request.auth.token.email_verified == true ||
+        request.auth.token.firebase.sign_in_provider == 'facebook.com'
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 3. Validation Blueprint: PublicProfile (Non-PII game profile & presence)
+    function isValidPublicProfile(data) {
+      return data.keys().hasAll([
+          'uid',
+          'playerCode',
+          'displayName',
+          'avatarColor',
+          'presenceStatus',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'uid',
+          'playerCode',
+          'displayName',
+          'avatarColor',
+          'presenceStatus',
+          'friendUids',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.uid == request.auth.uid &&
+        data.playerCode is string && data.playerCode.size() >= 3 && data.playerCode.size() <= 16 && data.playerCode.matches('^[A-Z0-9\\-]+$') &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 32 &&
+        data.avatarColor in ['RED', 'GREEN', 'YELLOW', 'BLUE'] &&
+        data.presenceStatus in ['ONLINE', 'IN_MATCH', 'OFFLINE'] &&
+        (!('friendUids' in data) || (data.friendUids is string && data.friendUids.size() <= 500)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // 4. Validation Blueprint: UserSave (Owner-isolated cloud account progress & restore)
+    function isValidUserSave(data) {
+      return data.keys().hasAll([
+          'uid',
+          'playerCode',
+          'displayName',
+          'avatarColor',
+          'photoUrl',
+          'authProvider',
+          'coins',
+          'gems',
+          'dailyStreak',
+          'lastDailyClaimDate',
+          'equippedDiceStyle',
+          'equippedTokenStyle',
+          'unlockedItemsCsv',
+          'savedMatchTurn',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'uid',
+          'playerCode',
+          'displayName',
+          'avatarColor',
+          'photoUrl',
+          'authProvider',
+          'coins',
+          'gems',
+          'dailyStreak',
+          'lastDailyClaimDate',
+          'equippedDiceStyle',
+          'equippedTokenStyle',
+          'unlockedItemsCsv',
+          'savedMatchTurn',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.uid == request.auth.uid &&
+        data.playerCode is string && data.playerCode.size() >= 3 && data.playerCode.size() <= 16 && data.playerCode.matches('^[A-Z0-9\\-]+$') &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 32 &&
+        data.avatarColor in ['RED', 'GREEN', 'YELLOW', 'BLUE'] &&
+        data.photoUrl is string && data.photoUrl.size() <= 500 &&
+        data.authProvider in ['GOOGLE', 'FACEBOOK'] &&
+        data.coins is int && data.coins >= 0 && data.coins <= 10000000 &&
+        data.gems is int && data.gems >= 0 && data.gems <= 1000000 &&
+        data.dailyStreak is int && data.dailyStreak >= 0 && data.dailyStreak <= 365 &&
+        data.lastDailyClaimDate is string && data.lastDailyClaimDate.size() <= 16 &&
+        data.equippedDiceStyle is string && data.equippedDiceStyle.size() >= 1 && data.equippedDiceStyle.size() <= 32 &&
+        data.equippedTokenStyle is string && data.equippedTokenStyle.size() >= 1 && data.equippedTokenStyle.size() <= 32 &&
+        data.unlockedItemsCsv is string && data.unlockedItemsCsv.size() <= 500 &&
+        data.savedMatchTurn is int && data.savedMatchTurn >= 0 && data.savedMatchTurn <= 10000 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // 5. Validation Blueprint: Room
+    function isValidRoom(data) {
+      return data.keys().hasAll([
+          'roomCode',
+          'hostUid',
+          'hostName',
+          'mode',
+          'status',
+          'maxPlayers',
+          'currentTurnColor',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'roomCode',
+          'hostUid',
+          'hostName',
+          'mode',
+          'status',
+          'maxPlayers',
+          'currentTurnColor',
+          'diceValue',
+          'connectedCount',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.roomCode is string && data.roomCode.size() >= 3 && data.roomCode.size() <= 16 && data.roomCode.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.hostUid is string && data.hostUid.size() >= 1 && data.hostUid.size() <= 128 && data.hostUid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.hostName is string && data.hostName.size() >= 1 && data.hostName.size() <= 32 &&
+        data.mode in ['ONLINE_2P', 'ONLINE_4P', 'TEAM_UP_2V2', 'FRIENDS_PRIVATE'] &&
+        data.status in ['WAITING', 'PLAYING', 'FINISHED'] &&
+        data.maxPlayers is int && (data.maxPlayers == 2 || data.maxPlayers == 4) &&
+        data.currentTurnColor in ['RED', 'GREEN', 'YELLOW', 'BLUE'] &&
+        (!('diceValue' in data) || (data.diceValue is int && data.diceValue >= 0 && data.diceValue <= 6)) &&
+        (!('connectedCount' in data) || (data.connectedCount is int && data.connectedCount >= 1 && data.connectedCount <= 4)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // /public_profiles/{userId}
+    match /public_profiles/{userId} {
+      allow get: if isSignedIn() && isValidId(userId);
+      allow list: if isSignedIn() && existing().presenceStatus in ['ONLINE', 'IN_MATCH', 'OFFLINE'];
+
+      allow create: if isTrustedAuthUser() &&
+        isValidId(userId) &&
+        userId == request.auth.uid &&
+        isValidPublicProfile(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isTrustedAuthUser() &&
+        isValidId(userId) &&
+        userId == request.auth.uid &&
+        isValidPublicProfile(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'playerCode',
+          'displayName',
+          'avatarColor',
+          'presenceStatus',
+          'friendUids',
+          'updatedAt'
+        ]);
+
+      allow delete: if false;
+    }
+
+    // /user_saves/{userId} (Strictly owner-isolated account progress & restore)
+    match /user_saves/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && userId == request.auth.uid;
+      allow list: if false;
+
+      allow create: if isTrustedAuthUser() &&
+        isValidId(userId) &&
+        userId == request.auth.uid &&
+        isValidUserSave(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isTrustedAuthUser() &&
+        isValidId(userId) &&
+        userId == request.auth.uid &&
+        isValidUserSave(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'playerCode',
+          'displayName',
+          'avatarColor',
+          'photoUrl',
+          'authProvider',
+          'coins',
+          'gems',
+          'dailyStreak',
+          'lastDailyClaimDate',
+          'equippedDiceStyle',
+          'equippedTokenStyle',
+          'unlockedItemsCsv',
+          'savedMatchTurn',
+          'updatedAt'
+        ]);
+
+      allow delete: if false;
+    }
+
+    // /rooms/{roomId}
+    match /rooms/{roomId} {
+      allow get: if isSignedIn() && isValidId(roomId);
+      allow list: if isSignedIn() && existing().status in ['WAITING', 'PLAYING'];
+
+      allow create: if isTrustedAuthUser() &&
+        isValidId(roomId) &&
+        isValidRoom(incoming()) &&
+        incoming().hostUid == request.auth.uid &&
+        incoming().status == 'WAITING' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isTrustedAuthUser() &&
+        isValidId(roomId) &&
+        isValidRoom(incoming()) &&
+        existing().status != 'FINISHED' &&
+        incoming().roomCode == existing().roomCode &&
+        incoming().hostUid == existing().hostUid &&
+        incoming().mode == existing().mode &&
+        incoming().maxPlayers == existing().maxPlayers &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          // Action 1: Join or start room
+          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'connectedCount', 'updatedAt']) ||
+          // Action 2: Game turn progression
+          incoming().diff(existing()).affectedKeys().hasOnly(['currentTurnColor', 'diceValue', 'status', 'updatedAt'])
+        );
+
+      allow delete: if isTrustedAuthUser() &&
+        isValidId(roomId) &&
+        existing().hostUid == request.auth.uid &&
+        existing().status == 'WAITING';
+    }
+  }
+}
